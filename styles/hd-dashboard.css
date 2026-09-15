@@ -1,0 +1,301 @@
+/* Readable desktop density with native, supersampled WebGL canvases. */
+:root {
+  --line: #364149;
+  --muted: #a5b2bb;
+  --dim: #91a1ad;
+  --panel: #1b2126;
+  --panel-light: #222b32;
+  color: #edf2f5;
+  background: #101519;
+}
+
+.panel { box-shadow: 0 6px 22px #0000001c; }
+.panel-title, .scene-toolbar { background: #20272d; }
+.joint-name, .slider-heading label { color: #e3ebef; }
+.joint-limits, .range-labels, .slider-heading label > span,
+.hand-caption, .preview-caption > span, .scene-units span,
+.telemetry-heading, .tool-coordinates > span:first-child,
+.network-stats > div > span, .section-label, .eyebrow,
+.pwm-table > div > span:first-child, .pwm-table small {
+  color: #9cafbd;
+}
+.source-description, .socket-help, .source-protocol, .input-note { color: #afbdc7; }
+.status.muted { color: #adb8bf; }
+.view-options { width: 290px; max-width: calc(100% - 24px); padding: 10px 16px; background: #202b33; }
+.popover-title { font-size: 11px; color: #b2c3cf; }
+.view-options > label { min-height: 43px; font-size: 13px; }
+.view-options input { width: 16px; height: 16px; }
+.render-quality-control { border-bottom: 1px solid var(--line); margin-bottom: 5px; padding-bottom: 12px !important; }
+.render-quality-control select {
+  font: 12px var(--mono);
+  color: #f3c7a6;
+  border: 1px solid #7c614b;
+  border-radius: 5px;
+  padding: 7px 10px;
+  background: #302a25;
+  cursor: pointer;
+}
+select:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+.hand-preview { background: radial-gradient(ellipse at 50% 40%, #354859, #1c2834 70%, #16202b); }
+.hand-preview-actions { display: flex; align-items: center; gap: 8px; }
+.hand-preview-actions .icon-button { pointer-events: auto; width: 27px; height: 27px; color: #d1e4f0; border-color: #526779; background: #21303ec9; }
+.preview-caption { align-items: center; }
+.hand-caption { pointer-events: none; color: #c0d5e3; line-height: 1.6; }
+.hand-caption > span { display: block; font: 8px/1.6 'DM Sans', sans-serif; color: #9cb4c7; }
+.hand-axis { pointer-events: none; bottom: 46px; }
+.hand-canvas { cursor: grab; }
+.hand-canvas:active { cursor: grabbing; }
+.hand-preview:fullscreen, .hand-preview.compact:fullscreen {
+  width: 100vw; height: 100vh !important; margin: 0; border: 0; border-radius: 0;
+  background: radial-gradient(ellipse at 50% 40%, #344a5d, #172431 75%);
+}
+.hand-preview:fullscreen .preview-caption { top: 24px; left: 30px; right: 30px; font-size: 17px; }
+.hand-preview:fullscreen .status { font-size: 12px; }
+.hand-preview:fullscreen .icon-button { width: 40px; height: 40px; }
+.hand-preview:fullscreen .hand-caption { bottom: 30px; font-size: 15px; }
+.hand-preview:fullscreen .hand-caption > span { font-size: 12px; }
+.hand-preview:fullscreen .hand-axis { left: 30px; bottom: 32px; font-size: 14px; }
+
+@media (min-width: 1100px) {
+  .topbar { height: 74px; padding: 0 32px; }
+  .brand { font-size: 24px; }
+  .brand-symbol { height: 38px; width: 38px; }
+  .brand-descriptor { font-size: 11px; color: #a3b1bc; }
+  .topbar nav button { font-size: 14px; }
+  .topbar .status { font-size: 13px; }
+  .local-chip { font-size: 10px; padding: 6px 8px; }
+  .workspace { max-width: 2200px; padding: 26px 28px 0; }
+  .page-heading { margin-bottom: 22px; }
+  .breadcrumb { font-size: 10px; color: #a0afba; }
+  h1 { font-size: 30px; letter-spacing: -.7px; }
+  h1 > span { font-size: 19px; color: #a4b0b9; }
+  .page-heading p { font-size: 13px; color: #b3bfc8; }
+  .heading-actions { gap: 10px; }
+  .heading-actions .button, .button { height: 42px; padding: 0 16px; font-size: 13px; border-radius: 6px; }
+  .icon-button { height: 34px; width: 34px; }
+  .text-button { font-size: 11px; }
+  .system-strip { min-height: 48px; gap: 26px; padding: 0 18px; margin-bottom: 16px; }
+  .system-strip-label { font-size: 10px; color: #b0bec8; }
+  .system-chip > span { font-size: 12px; }
+  .system-chip .status { font-size: 10px; }
+  .system-strip-end { font-size: 11px; }
+  .status { font-size: 10px; gap: 7px; }
+  .status i { width: 6px; height: 6px; }
+  .dashboard-grid { grid-template-columns: 300px minmax(0, 1fr) 310px; gap: 18px; }
+  .left-column, .right-column, .center-column { gap: 16px; }
+  .panel { border-radius: 9px; }
+  .panel-title, .wireless-panel .panel-title { height: 56px; padding: 0 18px; }
+  .panel-title h2, .wireless-panel h2 { font-size: 15px; gap: 9px; font-weight: 600; }
+  .panel-title h2 > svg { width: 18px; height: 18px; }
+  .tiny-tag { font-size: 9px; padding: 4px 6px; }
+  .live-tag { font-size: 9px; }
+  .panel-body { padding: 18px; }
+  .segmented { padding: 4px; border-radius: 6px; }
+  .segmented button { height: 35px; font-size: 12px; gap: 6px; }
+  .hand-preview { height: 270px; margin-top: 17px; }
+  .hand-preview.compact { height: 160px; }
+  .preview-caption { left: 13px; right: 13px; top: 13px; font-size: 10px; }
+  .preview-caption .status { font-size: 9px; }
+  .hand-caption { font-size: 10px; bottom: 12px; }
+  .hand-axis { font-size: 10px; left: 13px; bottom: 49px; }
+  .slider-control { margin-top: 24px; }
+  .slider-heading { margin-bottom: 12px; }
+  .slider-heading label { font-size: 14px; gap: 8px; }
+  .slider-heading label > span { font-size: 9px; letter-spacing: .2px; }
+  .slider-heading output { font-size: 17px; min-width: 59px; }
+  input[type=range] { height: 5px; margin: 14px 0 12px; }
+  input[type=range]::-webkit-slider-thumb { height: 15px; width: 15px; }
+  input[type=range]::-moz-range-thumb { height: 12px; width: 12px; }
+  .range-labels, .manual-sliders .range-labels { font-size: 10px; }
+  .manual-sliders .slider-control { margin-top: 18px; }
+  .input-note { font-size: 12px; gap: 7px; line-height: 1.6; margin-top: 21px; }
+  .sensor-readings { margin-top: 21px; padding-top: 17px; }
+  .eyebrow { font-size: 10px; }
+  .sensor-grid { margin-top: 12px; gap: 7px; }
+  .sensor-grid > div { padding: 10px 8px; }
+  .sensor-grid span { font-size: 10px; }
+  .sensor-grid b { font-size: 12px; }
+  .magnet-main { padding: 19px 17px; gap: 12px; }
+  .magnet-main h2 { font-size: 14px; }
+  .magnet-main > div > span { font-size: 11px; }
+  .magnet-icon { width: 38px; height: 38px; flex-shrink: 0; }
+  .toggle { width: 36px; height: 21px; padding: 3px; }
+  .toggle > span { width: 13px; height: 13px; }
+  .toggle.on > span { transform: translateX(14px); }
+  .magnet-bottom { padding: 13px 17px; }
+  .magnet-bottom > span:last-child { font-size: 10px; }
+  .scene-toolbar { height: 56px; min-height: 56px; padding: 0 18px; }
+  .scene-title { gap: 11px; }
+  .scene-title h2 { font-size: 15px; font-weight: 600; }
+  .scene-title .subtle { font-size: 10px; color: #9bb0bc; }
+  .scene-tools .status { font-size: 10px; }
+  .viewport-wrap { min-height: 570px; }
+  .scene-watermark { top: 26px; left: 26px; gap: 11px; }
+  .scene-watermark > div { font-size: 13px; color: #d4dfe5; }
+  .scene-watermark > div > span { font-size: 9px; color: #a7b8c2; margin-top: 7px; }
+  .scene-units { top: 27px; right: 24px; }
+  .scene-units span { font-size: 9px; }
+  .scene-units b { font-size: 11px; color: #c1ced7; }
+  .joint-label { opacity: 1; }
+  .joint-label > span { font-size: 11px; gap: 7px; padding: 5px 7px; border: 1px solid #48566399; border-radius: 4px; background: #131d24d9; }
+  .joint-label b { font-size: 10px; color: #c3d1db; letter-spacing: .3px; }
+  .label-shoulder > span { left: -131px; }
+  .label-base > span { bottom: -33px; }
+  .camera-bar { left: 23px; bottom: 23px; padding: 5px; gap: 4px; border-color: #5a6b78; }
+  .camera-label { font-size: 9px; color: #b2c2cd; }
+  .camera-bar button { height: 33px; font-size: 12px; padding: 0 10px; color: #c1cdd5; }
+  .view-gizmo { width: 66px; height: 66px; right: 21px; bottom: 20px; }
+  .scene-footer { height: 39px; min-height: 39px; padding: 0 17px; }
+  .scene-footer > span:first-child { font-size: 11px; color: #b5c4cf; gap: 7px; }
+  .scene-footer .status { font-size: 10px; }
+  .tool-coordinates { padding: 16px 18px; gap: 18px; min-height: 50px; flex-wrap: wrap; }
+  .tool-coordinates > span:first-child { font-size: 10px; }
+  .tool-coordinates > div { font-size: 13px; gap: 18px; }
+  .tool-coordinates em { color: #e0eaf0; }
+  .tool-coordinates small { font-size: 10px; }
+  .orbit-help { font-size: 10px; color: #a6b7c3; }
+  .control-bar { gap: 10px; padding-top: 0; }
+  .control-bar .button { height: 45px; font-size: 13px; padding: 0 17px; }
+  .control-bar .button.emergency { font-size: 12px; }
+  .telemetry-heading { padding: 20px 20px 3px; font-size: 10px; }
+  .joint-readings { padding: 0 20px 18px; }
+  .joint-reading { padding: 16px 0 2px; }
+  .joint-reading-top { gap: 10px; }
+  .joint-number { width: 27px; height: 25px; font-size: 10px; }
+  .joint-name { font-size: 14px; }
+  .joint-reading strong { font-size: 30px; line-height: 34px; color: #f3f7fa; }
+  .joint-reading strong small { font-size: 17px; color: #a6bbc9; }
+  .joint-meter { height: 4px; margin-top: 11px; }
+  .joint-limits { font-size: 10px; margin-top: 7px; }
+  .pwm-section { padding: 18px 20px 12px; }
+  .section-label { font-size: 9px; }
+  .pwm-table { margin-top: 13px; }
+  .pwm-table > div { font-size: 12px; padding: 6px 0; gap: 9px; }
+  .pwm-table > div > span:first-child { font-size: 10px; min-width: 31px; }
+  .pwm-table > div > span:nth-of-type(2) { color: #bdcbd5; }
+  .pwm-table b { font-size: 13px; color: #e0eaf0; }
+  .pwm-table small { font-size: 10px; }
+  .safe-limits, .streaming .safe-limits { font-size: 11px; padding: 12px; color: #afc9b9; line-height: 1.5; }
+  .wireless-panel .status { font-size: 9px; }
+  .wireless-link { padding: 20px 28px 19px; gap: 18px; }
+  .wireless-link > div > span { font-size: 10px; }
+  .network-stats { padding: 0 20px 20px; gap: 12px; }
+  .network-stats > div > span { font-size: 11px; }
+  .network-stats strong { font-size: 23px; color: #e0eaf0; }
+  .network-stats small { font-size: 10px; }
+  .packet-counts { padding: 13px 17px; font-size: 10px; gap: 12px; }
+  .packet-counts .text-button { font-size: 9px; }
+  .source-heading { padding: 14px 18px; gap: 26px; }
+  .source-heading h2 { font-size: 14px; font-weight: 600; }
+  .source-modes { min-width: 410px; max-width: 470px; }
+  .source-modes button { font-size: 12px; height: 33px; }
+  .source-badge { font-size: 10px; }
+  .source-description { font-size: 12px; padding: 12px 18px; }
+  .dummy-description span { font-size: 10px; color: #a1b5c3; }
+  .source-protocol { font-size: 11px; padding: 11px 18px; }
+  .source-protocol > span { font-size: 10px; }
+  .source-protocol details > div { font-size: 12px; }
+  .source-protocol pre { font-size: 12px; }
+  .source-protocol small { font-size: 11px; }
+  .socket-settings { padding: 16px 18px; }
+  .socket-form label { font-size: 12px; }
+  .socket-form input { height: 42px; font-size: 13px; }
+  .socket-form .button { height: 42px; min-width: 165px; }
+  .socket-help, .socket-help code { font-size: 11px; }
+  .socket-error { font-size: 12px; padding: 12px 18px; }
+  .stream-control-note { font-size: 12px; padding: 11px; }
+  .streaming .hand-fallback { font-size: 12px; }
+  .charts-grid { padding: 22px 0; }
+  .chart > div:first-child { font-size: 12px; }
+  .chart b { font-size: 13px; }
+  .sparkline { height: 64px; }
+  .chart-tools, .heading-detail { font-size: 10px; color: #a4b7c5; }
+  .pipeline { padding: 22px 18px; gap: 8px; }
+  .pipeline-node { padding: 13px 12px; }
+  .pipeline-node b { font-size: 12px; }
+  .pipeline-node > span { font-size: 9px; letter-spacing: 0; color: #a3b6c4; }
+  .pipeline-node-top { font-size: 10px; }
+  .pipeline-note { font-size: 11px; }
+  .diagnostics-toggle { height: 50px; font-size: 13px; }
+  .page-footer { font-size: 10px; }
+  .page-footer > span:first-child { font-size: 12px; }
+  .debug-overlay { font-size: 11px; line-height: 1.4; }
+  .debug-overlay b { font-size: 10px; }
+  .stop-overlay b { font-size: 13px; }
+  .stop-overlay span { font-size: 12px; }
+  .demo-overlay > div:first-child { font-size: 13px; }
+  .demo-overlay > div > span:last-child { font-size: 12px; }
+  .separate-labels { font-size: 11px; }
+  .presentation .viewport-wrap { min-height: 610px; }
+  .presentation .gesture-panel .panel-body { height: calc(100% - 56px); }
+  .presentation .joint-reading { padding-top: 28px; }
+}
+
+@media (min-width: 1600px) {
+  .workspace { padding-left: 32px; padding-right: 32px; }
+  .dashboard-grid { grid-template-columns: 335px minmax(0, 1fr) 345px; gap: 20px; }
+  .panel-body { padding: 20px; }
+  .hand-preview { height: 285px; }
+  .viewport-wrap { min-height: 590px; }
+  .joint-reading { padding-top: 20px; }
+  .sensor-grid > div { padding: 11px 9px; }
+  .slider-control { margin-top: 28px; }
+}
+
+@media (min-width: 1100px) and (max-width: 1499px) {
+  .workspace { padding-left: 20px; padding-right: 20px; }
+  .dashboard-grid { grid-template-columns: 280px minmax(0, 1fr) 290px; gap: 14px; }
+  .panel-title, .wireless-panel .panel-title { padding: 0 14px; }
+  .panel-title h2, .wireless-panel h2 { font-size: 14px; }
+  .panel-body { padding: 15px; }
+  .slider-heading label > span { font-size: 8px; }
+  .system-strip { gap: 18px; flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; }
+  .system-strip-end { display: none; }
+  .source-heading { gap: 18px; }
+  .source-modes { min-width: 360px; }
+  .scene-title .subtle, .scene-title .scene-divider { display: none; }
+  .orbit-help { display: none; }
+  .tool-coordinates { gap: 10px; padding: 14px; }
+  .tool-coordinates > div { font-size: 12px; gap: 12px; }
+  .control-bar { flex-wrap: wrap; gap: 8px; }
+  .control-bar .button { padding: 0 12px; font-size: 12px; }
+  .control-spacer { display: none; }
+  .control-bar .button.emergency { margin-left: auto; font-size: 11px; }
+  .camera-label { display: none; }
+  .camera-bar { left: 14px; }
+  .camera-bar button { padding: 0 8px; font-size: 11px; }
+  .scene-footer { padding: 0 12px; }
+  .scene-footer > span:first-child { font-size: 9px; gap: 4px; }
+  .scene-footer .status { font-size: 9px; }
+  .joint-readings { padding-left: 16px; padding-right: 16px; }
+  .joint-name { font-size: 13px; }
+  .joint-reading strong { font-size: 28px; }
+  .magnet-main { padding: 18px 12px; gap: 8px; }
+  .magnet-main h2 { font-size: 13px; }
+  .magnet-main > div > span { font-size: 10px; }
+  .magnet-bottom { padding: 12px; }
+  .magnet-bottom > span:last-child { font-size: 9px; }
+  .section-label { font-size: 8px; }
+  .pipeline-node { padding: 12px 9px; }
+  .pipeline-node b { font-size: 10px; }
+  .pipeline-node > span { font-size: 8px; }
+  .network-stats { padding: 0 14px 18px; }
+  .network-stats strong { font-size: 21px; }
+}
+
+@media (min-width: 1100px) and (max-width: 1250px) {
+  h1 { font-size: 27px; }
+  h1 > span { display: block; border: 0; padding: 0; margin: 5px 0 0; font-size: 17px; }
+  .heading-actions .button { font-size: 12px; padding: 0 12px; }
+  .scene-units span { font-size: 8px; }
+  .scene-watermark > div > span { font-size: 8px; }
+  .view-gizmo { width: 48px; height: 48px; right: 10px; }
+}
+
+@media (max-width: 1099px) {
+  .gesture-panel .hand-preview:not(.compact) { height: 240px; }
+  .joint-label > span { text-shadow: 0 1px 3px #000; }
+  .joint-label b { color: #c0d0dc; }
+  .source-modes button { min-height: 33px; }
+  .view-options { max-height: calc(100% - 75px); overflow-y: auto; }
+}
