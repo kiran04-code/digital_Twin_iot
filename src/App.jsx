@@ -29,7 +29,7 @@ function Slider({ label, value, min, max, onChange, disabled, hint, color = '#ed
 function GesturePanel({ sim, state }) {
   const handContainer = useRef(null);
   const handPreview = useRef(null);
-  const [handError, setHandError] = useState(false)
+  const [handError, setHandError] = useState(false);
   const expandHand = async () => {
     try {
       if (document.fullscreenElement) await document.exitFullscreen();
