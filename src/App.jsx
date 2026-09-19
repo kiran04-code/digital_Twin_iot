@@ -40,7 +40,7 @@ function GesturePanel({ sim, state }) {
     let hand;
     try { hand = new HandScene(handContainer.current, sim); } catch { setHandError(true); }
     return () => hand?.dispose();
-  }, [sim]);
+  }, [sim])
   const streaming = state.source !== 'local';
   const locked = state.stopped || state.demoRunning || streaming;
   return <aside className="left-column">
