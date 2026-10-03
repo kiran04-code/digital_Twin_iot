@@ -42,7 +42,7 @@ function GesturePanel({ sim, state }) {
     return () => hand?.dispose();
   }, [sim])
   const streaming = state.source !== 'local';
-  const locked = state.stopped || state.demoRunning || streaming;
+  const locked = state.stopped || state.demoRunning || streaming
   return <aside className="left-column">
     <section className="panel gesture-panel">
       <PanelTitle icon="hand" aside={<span className="tiny-tag">INPUT</span>}>Gesture controller</PanelTitle>
