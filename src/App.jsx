@@ -97,7 +97,7 @@ function Viewport({ sim, state }) {
     try {
       scene = new DigitalTwinScene(container.current, sim);
       // Available in development for end-to-end verification and integration experiments.
-      if (import.meta.env.DEV) window.__ARC__ = { sim, scene };
+      if (import.meta.env.DEV) window.__ARC__ = { sim, scene }
     } catch (err) { setError(err.message); }
     return () => { scene?.dispose(); if (import.meta.env.DEV) delete window.__ARC__; };
   }, [sim]);
