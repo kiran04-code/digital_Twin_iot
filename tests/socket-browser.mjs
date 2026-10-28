@@ -4,11 +4,20 @@ import { once } from 'node:events';
 import { mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { startDummySocketServer } from '../scripts/dummy-socket-server.mjs';
+import { SerialPortMock } from 'serialport';
+import { SerialService } from '../server/serial-service.mjs';
+import { readConfig } from '../server/config.mjs';
+import { startBridge } from '../server/bridge.mjs';
 
 await mkdir('test-results', { recursive: true });
 const fixture = new WebSocketServer({ port: 0, host: '127.0.0.1' });
 const dummy = startDummySocketServer({ port: 0 });
-await Promise.all([once(fixture, 'listening'), once(dummy, 'listening')]);
+SerialPortMock.binding.createPort('/dev/browser-sensor');
+const sensorConfig = { ...readConfig({ ESP32_SERIAL_PORT: '/dev/browser-sensor' }), port: 0 };
+let sensorUsb;
+const sensorSerial = new SerialService(sensorConfig, { createPort: options => { sensorUsb = new SerialPortMock(options); return sensorUsb; } });
+const sensorBridge = startBridge(sensorConfig, { serial: sensorSerial, logger: { info() {}, warn() {} } });
+await Promise.all([once(fixture, 'listening'), once(dummy, 'listening'), once(sensorBridge.server, 'listening')]);
 const fixtureUrl = `ws://127.0.0.1:${fixture.address().port}`;
 const dummyUrl = `ws://127.0.0.1:${dummy.address().port}`;
 let sentByBrowser = 0;
@@ -132,6 +141,31 @@ try {
   check('ESP32 raw angles map to existing joints; USB status and simulated sources are visible without moving the camera');
 
   await page.getByRole('button', { name: 'Disconnect socket', exact: true }).click();
+  await page.getByRole('textbox', { name: 'WebSocket URL' }).fill(`ws://127.0.0.1:${sensorBridge.server.address().port}`);
+  await page.getByRole('button', { name: 'Connect socket', exact: true }).click();
+  await page.waitForFunction(() => window.__ARC__.sim.socketTelemetry.phase === 'OPEN');
+  await expect.poll(() => sensorUsb?.isOpen).toBe(true);
+  sensorUsb.port.emitData(Buffer.from('{"type":"sensor_update","pitch":24.52,"roll":-1.83}\n'));
+  await expect(page.locator('.source-badge')).toContainText('CALCULATED');
+  await expect(page.getByTestId('angle-shoulder')).toContainText('90.6');
+  await expect(page.getByTestId('angle-elbow')).toContainText('89.5');
+  await expect(page.getByTestId('angle-wrist')).toContainText('-0.3');
+  await expect(page.locator('.scene-footer')).toContainText('Calculated servo angles');
+  await page.waitForFunction(() => window.__ARC__.sim.state.hasGesture);
+  await page.waitForFunction(() => window.__ARC__.sim.state.connection.stale);
+  expect(await page.evaluate(() => window.__ARC__.scene.arm.joints.shoulder.rotation.z * 180 / Math.PI)).toBeCloseTo(0.624, 1);
+  const heldSensor = await page.evaluate(() => ({ ...window.__ARC__.sim.displayJoints }));
+  await page.waitForTimeout(100);
+  expect(await page.evaluate(() => window.__ARC__.sim.displayJoints)).toEqual(heldSensor);
+  await expect(page.locator('.system-chip').filter({ hasText: 'USB RECEIVER' })).toContainText('CONNECTED');
+  sensorUsb.port.emitData(Buffer.from('P: 25.1 R: -2.2 | Servo angles: 88, 91, 89, 89\n'));
+  await expect(page.getByTestId('angle-base')).toContainText('-2.0');
+  await expect(page.getByTestId('angle-shoulder')).toContainText('91.0');
+  await expect(page.locator('.source-badge')).not.toContainText('CALCULATED');
+  await expect(page.locator('.scene-footer')).toContainText('Commanded servo angles');
+  check('actual serial service converts sensor_update using firmware rules, freezes after 500 ms, and accepts receiver servo logs');
+
+  await page.getByRole('button', { name: 'Disconnect socket', exact: true }).click();
   await page.getByRole('textbox', { name: 'WebSocket URL' }).fill(dummyUrl);
   await page.getByRole('button', { name: 'Connect socket', exact: true }).click();
   await page.waitForFunction(() => window.__ARC__.sim.socketTelemetry.received > 40);
@@ -154,6 +188,7 @@ try {
   check('socket flow has no console errors or uncaught exceptions');
 } finally {
   await browser.close();
+  await sensorBridge.close();
   for (const server of [fixture, dummy]) {
     for (const client of server.clients) client.terminate();
     await new Promise(resolve => server.close(resolve));

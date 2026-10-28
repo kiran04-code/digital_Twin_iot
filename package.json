@@ -7,7 +7,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node --test tests/control.test.js tests/socket.test.js tests/bridge.test.mjs",
+    "test": "node --test tests/control.test.js tests/socket.test.js tests/bridge.test.mjs tests/receiver-motion.test.mjs",
     "server": "node server/index.mjs",
     "serial:ports": "node server/index.mjs --list-ports",
     "test:browser": "node tests/browser.mjs",

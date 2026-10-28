@@ -25,6 +25,7 @@ export function parseTelemetryMessage(data, { wallNow = Date.now(), warn = () =>
   if (packet.type !== undefined && packet.type !== 'telemetry' && !hardware) throw new Error('Expected a telemetry packet.');
   if (hardware) {
     validateConnectionMetadata(packet);
+    if (packet.angleSource !== undefined && !['calculated', 'receiver_command'].includes(packet.angleSource)) throw new Error('Invalid angle source.');
     // Raw commanded servo positions and model coordinates are distinct values.
     validateAngles(packet.angles, Object.fromEntries(Object.keys(JOINTS).map(key => [key, [-Infinity, Infinity]])));
     if (!Number.isFinite(packet.timestamp)) throw new Error('Hardware timestamp must be Unix milliseconds.');
@@ -55,6 +56,7 @@ export function parseTelemetryMessage(data, { wallNow = Date.now(), warn = () =>
   if (hardware) validateAngles(angles, Object.fromEntries(Object.entries(JOINTS).map(([key, joint]) => [key, [joint.min, joint.max]])));
   const joints = toRadians(applyJointLimits(units === 'radians' ? toDegrees(angles) : angles, warn));
   return {
+    angleSource: hardware ? packet.angleSource ?? 'receiver_command' : null,
     source: packet.source, snapshot: hardware && packet.snapshot === true,
     ...(hardware && { dataTimeoutMs: packet.dataTimeoutMs, stale: packet.stale, usbConnected: packet.usbConnected }),
     seq, timestamp: packet.timestamp, joints, electromagnet,
@@ -84,6 +86,7 @@ export class SocketTelemetry {
     this.receiveTimes = []; this.packets = []; this.latency = null;
     this.deviceStatus = null; this.telemetrySource = null; this.deviceDetail = '';
     this.dataTimeoutMs = STALE_AFTER_MS; this.serverStale = false; this.usbConnected = null;
+    this.angleSource = null;
   }
   beginDummy() {
     this.disconnect(); this.reset(); this.phase = 'OPEN'; this.onChange();
@@ -161,6 +164,7 @@ export class SocketTelemetry {
     if (frame.seq !== undefined) this.lastSequence = frame.seq;
     if (frame.timestamp !== undefined) this.lastTimestamp = frame.timestamp;
     this.received++;
+    this.angleSource = frame.angleSource;
     this.lastReceivedAt = this.now() - ((frame.snapshot || frame.source === 'esp32' || frame.source === 'mock') && frame.timestamp !== undefined ? Math.max(0, this.wallNow() - frame.timestamp) : 0);
     if (frame.source) {
       this.telemetrySource = frame.source;
@@ -186,6 +190,7 @@ export class SocketTelemetry {
     return {
       status: this.phase === 'OPEN' ? (this.deviceStatus !== null ? deviceLabel : stale ? 'DELAYED' : 'ACTIVE') : this.phase,
       source: this.telemetrySource, deviceStatus: this.deviceStatus, detail: this.deviceDetail,
+      angleSource: this.angleSource,
       usbConnected: this.phase === 'OPEN' ? this.usbConnected : null, dataTimeoutMs: this.dataTimeoutMs,
       phase: this.phase, connected: this.phase === 'OPEN', stale,
       latency: this.latency, age: Number.isFinite(age) ? age : null,

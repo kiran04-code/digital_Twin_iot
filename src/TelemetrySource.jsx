@@ -21,7 +21,7 @@ export function TelemetrySource({ sim, state }) {
         )}
       </div>
       <span className={`source-badge ${state.source === 'local' || (!connection.stale && !state.stopped) ? 'ready' : ''}`}>
-        <i />{connection.source === 'mock' ? 'SIMULATED · ' : ''}{state.stopped ? 'PAUSED' : state.source === 'local' ? 'LOCAL SIMULATION' : connection.status}
+        <i />{connection.source === 'mock' ? 'SIMULATED · ' : connection.angleSource === 'calculated' ? 'CALCULATED · ' : ''}{state.stopped ? 'PAUSED' : state.source === 'local' ? 'LOCAL SIMULATION' : connection.status}
       </span>
     </div>
     {state.source === 'local' && <div className="source-description"><Icon name="hand" size={14} /><p>Use gesture sliders, manual servos, or the pick-and-place demo. Switch to a stream to drive the arm with incoming data.</p></div>}
@@ -35,7 +35,7 @@ export function TelemetrySource({ sim, state }) {
         <input id="socket-url" aria-label="WebSocket URL" value={state.socketUrl} spellCheck="false" autoComplete="off" disabled={busy || state.stopped} onChange={event => sim.setSocketUrl(event.target.value)} />
         <button className="button primary" disabled={state.stopped} type="submit"><Icon name={busy ? 'stop' : 'link'} size={14} />{connecting ? 'Cancel connection' : open ? 'Disconnect socket' : 'Connect socket'}</button>
       </form>
-      <div className="socket-help"><span>Commanded servo positions drive the view; physical position feedback is unavailable.</span><span>USB bridge: <code>npm run server</code></span></div>
+      <div className="socket-help"><span>{connection.angleSource === 'calculated' ? 'Joint angles calculated from glove pitch/roll using the receiver filter, gains and motion limits.' : 'Commanded servo positions drive the view; physical position feedback is unavailable.'}</span><span>USB bridge: <code>npm run server</code></span></div>
       {connection.detail && <p className="stream-control-note">{connection.detail}</p>}
     </div>}
     {state.source !== 'local' && <div className="source-protocol">

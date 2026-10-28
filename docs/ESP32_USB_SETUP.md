@@ -59,6 +59,43 @@ The expected output is one JSON object per line approximately every 20 ms (50 Hz
 
 **Glove freshness limitation:** the four-angle JSON has no ESP-NOW packet age or connection flag. If the receiver continuously reprints a held pose even after losing the glove, the backend cannot distinguish those lines from valid repeated commands for a stationary glove. To make joint-update freshness reflect ESP-NOW freshness, the receiver must emit these records only while valid ESP-NOW packets are arriving, or expose explicit packet-age metadata in a future firmware/protocol change. Do not treat USB connectivity or unchanged angle values as evidence that the glove is active or inactive. No sender or receiver firmware has been changed here.
 
+## Sensor-only updates and your receiver mapping
+
+The bridge also accepts the sensor lines you supplied, without changing firmware:
+
+```json
+{"type":"sensor_update","pitch":24.52,"roll":-1.83}
+```
+
+`js/receiverMotion.js` reproduces the supplied receiver's rules. Pitch must be finite within ±90° and roll within ±180°. The first sample initializes the filter; each subsequent 20 ms step uses `filtered += 0.20 * (sample - filtered)`. With `pitchDelta = filteredPitch - 24` and `rollDelta = filteredRoll + 1`, raw servo targets are:
+
+| Joint | Target servo angle before limits |
+| --- | --- |
+| Base | `90 + rollDelta * 1.5` |
+| Shoulder | `90 + pitchDelta * 1.2` |
+| Elbow | `90 - pitchDelta * 1.0` |
+| Wrist | `90 - pitchDelta * 0.6` |
+
+Targets use the configured receiver joint limits. Each current servo angle moves at most 1° toward its target per 20 ms update. Calculated state starts at 90° on all joints, matching receiver startup. Updates stop and the last pose is held after 500 ms without a valid sensor sample, matching the firmware's link timeout. The model's existing signed base/wrist conversion and rotation offsets are then applied as usual. No commands are sent to hardware.
+
+For the three sample readings in the chat, received 20 ms apart, the first three calculated raw servo poses are:
+
+| Pitch / roll | Base | Shoulder | Elbow | Wrist |
+| --- | --- | --- | --- | --- |
+| 24.52 / −1.83 | 89.000 | 90.624 | 89.480 | 89.688 |
+| 25.10 / −2.15 | 88.659 | 90.763 | 89.364 | 89.618 |
+| 26.42 / −3.02 | 88.321 | 91.191 | 89.007 | 89.404 |
+
+These are **calculated estimates**, identified by `angleSource:"calculated"` and the UI's CALCULATED indicator. Serial arrival timing, lost samples, and attaching after the arm has already moved can make the estimated current angles differ from the receiver's actual commanded positions. No orientation-only stream can recover an unknown previous servo state exactly.
+
+Your pasted firmware currently prints final servo commands in this format, which is now accepted directly too:
+
+```text
+P: 25.1 R: -2.2 | Servo angles: 88, 91, 89, 89
+```
+
+Those final angles bypass the filter/estimate and carry `angleSource:"receiver_command"`; the pitch/roll values also drive the existing hand preview. They reflect the rounded command values printed by the receiver (`%.0f`, approximately ±0.5° precision). Four-angle JSON remains accepted and preserves the precision supplied by the firmware. Receiving direct joint commands cancels pending sensor-based motion and seeds the current pose for a later sensor stream. Other startup/debug text continues to be ignored.
+
 ## Calibrate raw servo angles to the existing model
 
 The receiver emits servo degrees; the existing model uses these control coordinates:

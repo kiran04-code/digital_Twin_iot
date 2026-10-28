@@ -6,6 +6,8 @@ A complete React + Three.js digital twin of a wireless gesture-controlled, four-
 
 For ESP32 receiver USB synchronization, follow [ESP32 USB setup](docs/ESP32_USB_SETUP.md). The bridge uses `npm run server` on `ws://localhost:8080`; choose WebSocket in the existing dashboard. Includes COM port discovery, calibration, receiver output snippet and an opt-in development mock.
 
+The bridge accepts `sensor_update` pitch/roll JSON and calculates all four servo angles using the supplied receiver's neutral offsets, filter, gains, limits and slew rate. The UI labels these poses CALCULATED. Final joint JSON and the receiver's `P: ... R: ... | Servo angles: ...` lines are supported as direct commanded-angle input.
+
 Requires Node.js 20.19+ or 22+.
 
 ```sh
