@@ -118,6 +118,45 @@ test('four-joint hierarchy agrees with end-effector kinematics and preserves lin
   }
 });
 
+test('servo leads stay attached through joint motion and reuse their GPU buffers', () => {
+  const arm = new RoboticArm();
+  const parent = new THREE.Group(); parent.add(arm.root);
+  parent.position.set(4, 2, -3); parent.rotation.set(0.1, 0.7, -0.2);
+  const buffers = arm.leads.map(lead => lead.position.array);
+  const ringCenter = (lead, segment) => {
+    const center = new THREE.Vector3();
+    for (let j = 0; j < lead.sides; j++) {
+      const index = (lead.segments + 1 + segment) * lead.sides + j;
+      center.add(new THREE.Vector3().fromBufferAttribute(lead.position, index));
+    }
+    return center.divideScalar(lead.sides);
+  };
+  for (const pose of [HOME, PICK_POSE, PLACE_POSE, { base: -90, shoulder: 165, elbow: 20, wrist: 90 }]) {
+    arm.setJointState(toRadians(pose));
+    arm.leads.forEach((lead, i) => {
+      const anchor = arm.root.worldToLocal(lead.anchor.getWorldPosition(new THREE.Vector3()));
+      close(ringCenter(lead, 0).distanceTo(anchor), 0, 1e-6);
+      close(ringCenter(lead, lead.segments).distanceTo(lead.destination), 0, 1e-6);
+      assert.equal(lead.position.array, buffers[i]);
+      assert.ok(lead.position.array.every(Number.isFinite));
+      assert.ok(lead.normal.array.every(Number.isFinite));
+    });
+  }
+});
+
+test('printed link windows remain open through the plate thickness', () => {
+  const arm = new RoboticArm();
+  for (const [name, length, width] of [['upperArm', DIMENSIONS.upperArm, 0.68], ['forearm', DIMENSIONS.forearm, 0.63]]) {
+    const plate = arm.root.getObjectByName(name + 'SlottedPlate');
+    const probe = new THREE.Mesh(plate.geometry, plate.material);
+    probe.updateMatrixWorld();
+    const ray = new THREE.Raycaster(new THREE.Vector3(0, length / 2, 1), new THREE.Vector3(0, 0, -1));
+    assert.equal(ray.intersectObject(probe).length, 0, 'window should be a real opening');
+    ray.ray.origin.x = width * 0.4;
+    assert.ok(ray.intersectObject(probe).length > 0, 'side rail should remain solid');
+  }
+});
+
 test('magnetic pickup attaches at contact, transports cube and preserves release transform', () => {
   const scene = new THREE.Scene(), arm = new RoboticArm(); scene.add(arm.root);
   const magnet = new Electromagnet(scene, arm);

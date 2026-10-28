@@ -134,9 +134,11 @@ These are angular constraints, not a general collision-avoidance solver. Arbitra
 
 ## 5. Change dimensions
 
+The arm appearance follows the supplied hardware photos: off-white printed slotted links, exposed black hobby servos, stacked circular base discs, an open wrist bracket, and a clear electronics enclosure. Three-color servo leads follow the moving joints using reusable geometry buffers in `js/servoLead.js`. Proportions are estimated from photos, not measured CAD dimensions. The existing joint pivots, telemetry mapping, and demo contact point are retained; magnetic pickup remains a simulation feature.
+
 Edit `DIMENSIONS` in `js/config.js`. The model's shoulder height, upper-arm length, forearm length, wrist extension, magnet length, base height, and base radius use this configuration. Shoulder height is measured from the table; keep it above the base when changing proportions. One world unit represents 100 mm in the coordinate readout.
 
-The demo cube and destination markers are placed using forward kinematics. If link lengths change, review `PICK_POSE`, `PLACE_POSE`, and `LIFT` in `js/demoController.js` so the tool remains near the tabletop and within the capture radius. The workspace hemisphere is an approximate maximum reach, not an exact reachable-volume calculation. Decorative base-plate and bearing details are constructed in `RoboticArm.createBase()` and `createJoint()`.
+The demo cube and destination markers are placed using forward kinematics. If link lengths change, review `PICK_POSE`, `PLACE_POSE`, and `LIFT` in `js/demoController.js` so the tool remains near the tabletop and within the capture radius. The workspace hemisphere is an approximate maximum reach, not an exact reachable-volume calculation. Printed plates, servo housings, and the enclosure are constructed in `js/roboticArm.js`.
 
 ## 6. How ESP-NOW simulation works
 
