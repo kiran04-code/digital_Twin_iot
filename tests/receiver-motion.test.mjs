@@ -5,9 +5,47 @@ import { SerialService } from '../server/serial-service.mjs';
 import { readConfig } from '../server/config.mjs';
 import { parseTelemetryMessage } from '../js/socketTelemetry.js';
 import { RoboticArm } from '../js/roboticArm.js';
-import { rad } from '../js/config.js';
+import { HOME, RECEIVER_HOME, rad, toRadians } from '../js/config.js';
+import { toModelAngles } from '../js/hardwareTelemetry.js';
+import { Simulation } from '../js/simulation.js';
 
 const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-8, `${actual} != ${expected}`);
+
+test('firmware startup, neutral sensor input, and model Home use the same four-servo pose', () => {
+  const rawHome = { base: 90, shoulder: 90, elbow: 90, wrist: 90 };
+  const modelHome = { base: 0, shoulder: 90, elbow: 90, wrist: 0 };
+  assert.deepEqual(RECEIVER_HOME, rawHome);
+  assert.deepEqual(toModelAngles(rawHome), modelHome);
+  assert.deepEqual(HOME, modelHome);
+  const motion = new ReceiverMotion();
+  assert.deepEqual(motion.current, rawHome);
+  motion.receive({ pitch: 24, roll: -1 }, 0);
+  assert.deepEqual(motion.step(0).angles, rawHome);
+
+  const sim = new Simulation(), arm = new RoboticArm();
+  try {
+    assert.deepEqual(sim.displayJoints, toRadians(modelHome));
+    close(arm.joints.base.rotation.y, 0);
+    close(arm.joints.shoulder.rotation.z, 0);
+    close(arm.joints.elbow.rotation.z, -Math.PI / 2);
+    close(arm.joints.wrist.rotation.z, -Math.PI / 2);
+    // Repeated local transport updates must not move the home elbow to the
+    // local gesture mapper's different neutral angle (95 degrees).
+    for (let i = 0; i < 30; i++) {
+      sim.receivePacket(sim.createGesturePacket()); sim.update(0.02);
+    }
+    assert.deepEqual(sim.displayJoints, toRadians(modelHome));
+    sim.setGesture('roll', 35);
+    sim.receivePacket(sim.createGesturePacket()); sim.update(0.1);
+    assert.notEqual(sim.physicalJoints.base, 0);
+    sim.home();
+    const command = sim.createGesturePacket();
+    assert.equal(command.mode, 'manual');
+    for (const key of Object.keys(modelHome)) close(command[key], modelHome[key]);
+    sim.receivePacket(command);
+    assert.deepEqual(sim.state.targetJoints, toRadians(modelHome));
+  } finally { sim.dispose(); }
+});
 
 test('supplied sensor samples follow receiver neutral offsets, filter, signs and 1-degree slew', () => {
   const motion = new ReceiverMotion();

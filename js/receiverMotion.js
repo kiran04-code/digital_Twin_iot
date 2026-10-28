@@ -1,4 +1,4 @@
-import { clampJointAngle } from './config.js';
+import { RECEIVER_HOME, clampJointAngle } from './config.js';
 import { DEFAULT_LIMITS, JOINT_KEYS } from './hardwareTelemetry.js';
 
 // Matches the supplied receiver firmware. Angles here are raw servo degrees.
@@ -18,7 +18,7 @@ export function validateSensor(sample) {
 /** A receiver-side motion estimate; direct commanded angles remain authoritative. */
 export class ReceiverMotion {
   constructor(limits = DEFAULT_LIMITS) { this.limits = limits; this.reset(); }
-  reset(angles = Object.fromEntries(JOINT_KEYS.map(key => [key, 90]))) {
+  reset(angles = RECEIVER_HOME) {
     this.current = { ...angles }; this.filtered = null; this.sample = null;
     this.receivedAt = -Infinity; this.lastStepAt = -Infinity;
   }

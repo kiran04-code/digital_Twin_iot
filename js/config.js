@@ -7,7 +7,13 @@ export const JOINTS = {
   elbow: { label: 'Elbow', min: 20, max: 160, channel: 2, color: '#b8a0d9' },
   wrist: { label: 'Wrist', min: -90, max: 90, channel: 3, color: '#8ac69c', signed: true },
 };
-export const HOME = { base: 0, shoulder: 90, elbow: 90, wrist: 0 };
+// Receiver setup(): setAllServos(90, 90, 90, 90), in raw servo degrees.
+export const RECEIVER_HOME = Object.freeze({ base: 90, shoulder: 90, elbow: 90, wrist: 90 });
+// Base and wrist use centered model coordinates; 90 servo degrees is model zero.
+export const HOME = Object.freeze({
+  base: RECEIVER_HOME.base - 90, shoulder: RECEIVER_HOME.shoulder,
+  elbow: RECEIVER_HOME.elbow, wrist: RECEIVER_HOME.wrist - 90,
+});
 export const DIMENSIONS = { baseRadius: 1.15, baseHeight: 0.5, shoulderHeight: 1.15, upperArm: 2.65, forearm: 2.35, wrist: 0.48, magnet: 0.48 };
 export const GESTURE_MAPPING = {
   roll: { input: [-90, 90], base: [-90, 90] },
