@@ -22,7 +22,8 @@ export const RENDER_QUALITY = {
 };
 // Native WebSocket telemetry. Change this to the ESP32 or bridge endpoint later.
 export const SOCKET_CONFIG = {
-  url: 'ws://localhost:8765',
+  url: import.meta.env?.VITE_TELEMETRY_URL || 'ws://localhost:8080',
+  reconnectMs: 2000,
   connectTimeoutMs: 6000,
   maxMessageBytes: 16384,
   // Optional sender timestamps must be Unix milliseconds, with synchronized clocks.

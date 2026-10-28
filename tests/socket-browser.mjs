@@ -32,7 +32,7 @@ try {
   expect(await page.evaluate(() => window.__ARC__.sim.transportTimer)).toBeNull();
   await expect(page.getByRole('button', { name: 'Start demo', exact: true })).toBeDisabled();
   await expect(page.getByRole('slider', { name: 'Base', exact: true })).toBeDisabled();
-  expect(await page.evaluate(() => window.__ARC__.sim.socketTelemetry.received)).toBeGreaterThan(3);
+  await expect.poll(() => page.evaluate(() => window.__ARC__.sim.socketTelemetry.received)).toBeGreaterThan(3);
   await page.screenshot({ path: 'test-results/dummy-stream.png', fullPage: true });
   await page.getByRole('button', { name: 'Stop dummy stream', exact: true }).click();
   const stoppedDummy = await page.evaluate(() => ({ ...window.__ARC__.sim.displayJoints }));
@@ -98,6 +98,38 @@ try {
   await expect(page.getByTestId('angle-base')).toContainText('-28.6');
   expect(sentByBrowser).toBe(0);
   check('monitoring pause/resume reconnects safely, accepts radians and sends no hardware commands');
+
+  // Reopen the fixture so hardware timestamps/sequences start a fresh session.
+  await page.getByRole('button', { name: 'Disconnect socket', exact: true }).click();
+  await page.getByRole('button', { name: 'Connect socket', exact: true }).click();
+  await page.waitForFunction(() => window.__ARC__.sim.socketTelemetry.phase === 'OPEN');
+  broadcast({ type: 'connection_status', timestamp: Date.now(), source: 'esp32', status: 'waiting', usbConnected: true, stale: true, dataTimeoutMs: 1000 });
+  await expect(page.locator('.source-badge')).toContainText('WAITING');
+  const cameraBefore = await page.evaluate(() => window.__ARC__.scene.camera.position.toArray());
+  const hardware = { type: 'joint_update', timestamp: Date.now(), source: 'esp32', seq: 1, angles: { base: 110, shoulder: 110, elbow: 75, wrist: 120 }, usbConnected: true, stale: false, dataTimeoutMs: 1000 };
+  broadcast(hardware);
+  await expect(page.getByTestId('angle-base')).toContainText('20.0');
+  await expect(page.getByTestId('angle-wrist')).toContainText('30.0');
+  await expect(page.locator('.source-badge')).toContainText('CONNECTED');
+  await expect.poll(() => page.evaluate(() => window.__ARC__.scene.arm.joints.base.rotation.y * 180 / Math.PI)).toBeCloseTo(20, 0);
+  expect(await page.evaluate(() => window.__ARC__.scene.camera.position.toArray())).toEqual(cameraBefore);
+  await page.waitForFunction(() => window.__ARC__.sim.state.connection.stale);
+  await expect(page.locator('.source-badge')).toContainText('WAITING');
+  await expect(page.locator('.system-chip').filter({ hasText: 'USB RECEIVER' })).toContainText('CONNECTED');
+  await expect(page.locator('.system-chip').filter({ hasText: 'WEBSOCKET' })).toContainText('CONNECTED');
+  expect(await page.evaluate(() => window.__ARC__.sim.state.connection.dataTimeoutMs)).toBe(1000);
+  broadcast({ ...hardware, timestamp: Date.now(), seq: 2 });
+  await expect(page.locator('.source-badge')).toContainText('CONNECTED');
+  broadcast({ type: 'connection_status', timestamp: Date.now(), source: 'esp32', status: 'disconnected', usbConnected: false, stale: true, dataTimeoutMs: 1000 });
+  await expect(page.locator('.source-badge')).toContainText('DISCONNECTED');
+  await expect(page.locator('.system-chip').filter({ hasText: 'USB RECEIVER' })).toContainText('DISCONNECTED');
+  const heldHardware = await page.evaluate(() => ({ ...window.__ARC__.sim.displayJoints }));
+  await page.waitForTimeout(650);
+  expect(await page.evaluate(() => window.__ARC__.sim.displayJoints)).toEqual(heldHardware);
+  broadcast({ type: 'connection_status', timestamp: Date.now(), source: 'mock', status: 'connected' });
+  broadcast({ ...hardware, timestamp: Date.now(), seq: 3, source: 'mock', usbConnected: null });
+  await expect(page.locator('.source-badge')).toContainText('SIMULATED');
+  check('ESP32 raw angles map to existing joints; USB status and simulated sources are visible without moving the camera');
 
   await page.getByRole('button', { name: 'Disconnect socket', exact: true }).click();
   await page.getByRole('textbox', { name: 'WebSocket URL' }).fill(dummyUrl);

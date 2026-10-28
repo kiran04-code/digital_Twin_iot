@@ -7,7 +7,9 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node --test tests/control.test.js tests/socket.test.js",
+    "test": "node --test tests/control.test.js tests/socket.test.js tests/bridge.test.mjs",
+    "server": "node server/index.mjs",
+    "serial:ports": "node server/index.mjs --list-ports",
     "test:browser": "node tests/browser.mjs",
     "test:socket": "node tests/socket-browser.mjs",
     "socket:demo": "node scripts/dummy-socket-server.mjs"
@@ -15,14 +17,16 @@
   "dependencies": {
     "@fontsource/dm-sans": "^5.2.6",
     "@fontsource/ibm-plex-mono": "^5.2.6",
+    "dotenv": "^18.0.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "three": "0.180.0"
+    "serialport": "^13.0.0",
+    "three": "0.180.0",
+    "ws": "^8.22.0"
   },
   "devDependencies": {
     "@playwright/test": "1.55.0",
     "@vitejs/plugin-react": "4.4.1",
-    "vite": "6.3.5",
-    "ws": "^8.21.3"
+    "vite": "6.3.5"
   }
 }

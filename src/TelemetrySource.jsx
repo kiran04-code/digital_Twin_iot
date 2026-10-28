@@ -21,7 +21,7 @@ export function TelemetrySource({ sim, state }) {
         )}
       </div>
       <span className={`source-badge ${state.source === 'local' || (!connection.stale && !state.stopped) ? 'ready' : ''}`}>
-        <i />{state.stopped ? 'PAUSED' : state.source === 'local' ? 'LOCAL SIMULATION' : connection.status}
+        <i />{connection.source === 'mock' ? 'SIMULATED · ' : ''}{state.stopped ? 'PAUSED' : state.source === 'local' ? 'LOCAL SIMULATION' : connection.status}
       </span>
     </div>
     {state.source === 'local' && <div className="source-description"><Icon name="hand" size={14} /><p>Use gesture sliders, manual servos, or the pick-and-place demo. Switch to a stream to drive the arm with incoming data.</p></div>}
@@ -35,7 +35,8 @@ export function TelemetrySource({ sim, state }) {
         <input id="socket-url" aria-label="WebSocket URL" value={state.socketUrl} spellCheck="false" autoComplete="off" disabled={busy || state.stopped} onChange={event => sim.setSocketUrl(event.target.value)} />
         <button className="button primary" disabled={state.stopped} type="submit"><Icon name={busy ? 'stop' : 'link'} size={14} />{connecting ? 'Cancel connection' : open ? 'Disconnect socket' : 'Connect socket'}</button>
       </form>
-      <div className="socket-help"><span>Incoming telemetry controls the view. This connection does not send hardware commands.</span><span>Test server: <code>npm run socket:demo</code></span></div>
+      <div className="socket-help"><span>Commanded servo positions drive the view; physical position feedback is unavailable.</span><span>USB bridge: <code>npm run server</code></span></div>
+      {connection.detail && <p className="stream-control-note">{connection.detail}</p>}
     </div>}
     {state.source !== 'local' && <div className="source-protocol">
       <details><summary><Icon name="code" size={12} />Expected JSON format</summary><div><p>Send all four joint angles. Units default to degrees; radians are also supported. A flat object with base, shoulder, elbow and wrist also works. Optional pitch and roll use degrees.</p><pre>{JSON.stringify(example, null, 2)}</pre><small>Use standard WebSocket JSON from your Node.js server. Socket.IO requires its own adapter.</small></div></details>
@@ -48,7 +49,7 @@ export function TelemetrySource({ sim, state }) {
 export function StreamConnectionPanel({ sim, state }) {
   const connection = state.connection;
   const available = connection.phase === 'OPEN' || connection.phase === 'CONNECTING';
-  const tone = connection.status === 'ACTIVE' ? 'green' : connection.status === 'DELAYED' || connection.status === 'CONNECTING' ? 'amber' : 'red';
+  const tone = ['ACTIVE', 'CONNECTED'].includes(connection.status) ? 'green' : ['DELAYED', 'WAITING', 'CONNECTING'].includes(connection.status) ? 'amber' : 'red';
   return <section className="panel wireless-panel">
     <div className="panel-title"><h2><Icon name="wifi" size={16} />{state.source === 'dummy' ? 'Dummy telemetry' : 'Socket telemetry'}</h2><span className={`status ${tone}`}><i />{connection.status}</span></div>
     <div className={`wireless-link ${connection.status.toLowerCase()} ${connection.stale || state.stopped ? 'halted' : ''}`}><div><Icon name="chip" size={20} /><span>{state.source === 'dummy' ? 'TEST SOURCE' : 'SOCKET SERVER'}</span></div><div className="wireless-beam"><i /><i /><i /><Icon name="arrow" size={14} /></div><div><Icon name="cube" size={20} /><span>DIGITAL TWIN</span></div></div>
@@ -60,10 +61,12 @@ export function StreamConnectionPanel({ sim, state }) {
 export function StreamStatusStrip({ state }) {
   const connection = state.connection;
   const chips = [
-    ['SOURCE', state.source === 'dummy' ? 'GENERATED' : 'WEBSOCKET', 'muted'],
-    ['CONNECTION', connection.phase === 'OPEN' ? 'OPEN' : connection.phase, connection.connected ? 'green' : 'amber'],
+    ['SOURCE', connection.source === 'mock' ? 'SIMULATED' : connection.source === 'esp32' ? 'ESP32 USB' : state.source === 'dummy' ? 'GENERATED' : 'WEBSOCKET', 'muted'],
+    [state.source === 'dummy' ? 'STREAM' : 'WEBSOCKET', connection.phase === 'OPEN' ? 'CONNECTED' : connection.phase, connection.connected ? 'green' : 'amber'],
     ['TELEMETRY', state.stopped ? 'PAUSED' : connection.stale ? 'STALE' : 'LIVE', state.stopped || connection.stale ? 'amber' : 'green'],
-    ['CONTROL', 'MONITORING', 'muted'],
+    connection.source === 'esp32'
+      ? ['USB RECEIVER', connection.usbConnected === null ? 'UNKNOWN' : connection.usbConnected ? 'CONNECTED' : 'DISCONNECTED', connection.usbConnected ? 'green' : 'amber']
+      : ['CONTROL', 'MONITORING', 'muted'],
   ];
   return <div className="system-strip"><div className="system-strip-label"><i /><span>STREAM STATUS</span></div>{chips.map(([label, value, tone]) => <div className="system-chip" key={label}><span>{label}</span><span className={`status ${tone}`}><i />{value}</span></div>)}<div className="system-strip-end"><Icon name="shield" size={13} />Incoming angles validated</div></div>;
 }

@@ -4,6 +4,8 @@ A complete React + Three.js digital twin of a wireless gesture-controlled, four-
 
 ## Run locally
 
+For ESP32 receiver USB synchronization, follow [ESP32 USB setup](docs/ESP32_USB_SETUP.md). The bridge uses `npm run server` on `ws://localhost:8080`; choose WebSocket in the existing dashboard. Includes COM port discovery, calibration, receiver output snippet and an opt-in development mock.
+
 Requires Node.js 20.19+ or 22+.
 
 ```sh
@@ -165,7 +167,9 @@ The six charts update at 10 Hz with 100 samples each. The 3D view renders with `
 
 De-energizing calls `scene.attach(cube)`, preserving the world-space position and rotation. As requested, the released cube remains at its last position; freefall is not simulated. The demo releases near the table. **Reset target objects** restores the cube to the reachable pickup point. The demo waits for successful capture before advancing to the lift stage.
 
-## 8. Test socket data now; connect your Node.js server later
+## 8. WebSocket testing and ESP32 USB
+
+The USB backend is included: see [ESP32 USB setup](docs/ESP32_USB_SETUP.md) for `npm run server`, serial configuration and receiver integration. The commands below describe the separate legacy demo server.
 
 Use **Dummy stream** to test without running a server. For a complete network test, run this in a second terminal:
 
@@ -175,7 +179,7 @@ npm run socket:demo
 
 Choose **WebSocket**, enter `ws://localhost:8765`, and click **Connect socket**. The included Node.js server emits four joint angles at approximately 32 Hz. Replace the URL with your real Node.js endpoint when available. The endpoint and connection limits default to `SOCKET_CONFIG` in `js/config.js`.
 
-Both streams follow the same path: JSON message → schema/order validation → joint limits → received joint state → smooth Three.js display. Switching sources cancels old timers and sockets, so synthetic packets cannot overwrite real feedback. Invalid messages do not refresh the heartbeat. After 500 ms without a valid frame, the view is marked stale and holds its last displayed pose. Disconnect and reconnect controls are explicit; there is no automatic fallback to dummy data.
+Both streams follow the same path: JSON message → schema/order validation → joint limits → received joint state → smooth Three.js display. Switching sources cancels old timers and sockets, so synthetic packets cannot overwrite real feedback. Invalid messages do not refresh the heartbeat. Local/dummy streams become stale after 500 ms; the ESP32 bridge advertises `ESP32_DATA_TIMEOUT_MS` (default 1000 ms) to the frontend. The view holds its last displayed pose when stale. Unexpected socket closure reconnects automatically; there is no automatic fallback to dummy data.
 
 Socket mode is receive-only. Gesture/manual controls and the local demo are disabled. **Pause monitoring** freezes the view and closes the stream; **Resume monitoring** reconnects. Neither button sends a physical emergency-stop command. Reported angles remain exact within the configured display limits; only the rendered model is interpolated. PWM values are calculated equivalents, not measured hardware pulses. Missing optional hand orientation displays as unavailable.
 

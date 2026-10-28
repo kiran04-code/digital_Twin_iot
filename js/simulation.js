@@ -108,6 +108,8 @@ export class Simulation {
     this.physicalJoints = { ...this.state.joints };
     this.state.targetJoints = { ...this.state.joints };
     this.state.manual = toDegrees(this.state.joints);
+    // A late subscriber must see the saved pose even when its data is already stale.
+    if (frame.snapshot) this.displayJoints = { ...this.state.joints };
     if (frame.electromagnet !== undefined) this.state.magnet = this.state.requestedMagnet = frame.electromagnet;
     this.state.hasGesture = Number.isFinite(frame.gesture.pitch) && Number.isFinite(frame.gesture.roll);
     if (this.state.hasGesture) {

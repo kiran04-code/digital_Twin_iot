@@ -1,4 +1,6 @@
-# Dummy data now, Node.js telemetry later
+# WebSocket and dummy telemetry
+
+The default frontend endpoint is `ws://localhost:8080`. Use `npm run server` for USB serial, with configuration and receiver insertion instructions in [ESP32 USB setup](ESP32_USB_SETUP.md). The existing `npm run socket:demo` below remains on port 8765; enter `ws://localhost:8765` explicitly to use it. Legacy telemetry messages remain supported; hardware uses `joint_update` and `connection_status` messages described in the USB guide.
 
 The dashboard has three sources. Exactly one source owns the displayed joint data at a time.
 
@@ -132,8 +134,8 @@ The bundled dummy server is ready to run. The measured-data callback above is an
 
 - Switching sources stops the local packet timer and dummy generator, closes the former WebSocket, cancels the local demo, and resets packet history. The arm holds its current display pose until the newly selected source provides data.
 - Each connection has a generation identity. Events from a canceled or previous socket cannot update the current source. Reconnecting starts a fresh ordering baseline.
-- The UI distinguishes connecting, open-but-waiting, active, stale, disconnected, and error states. Connection attempts time out after 6 seconds and can be canceled. Reconnect is explicit.
-- Only valid accepted frames refresh the 500 ms heartbeat. Invalid traffic cannot keep the synchronization indicator green.
+- The UI distinguishes connecting, open-but-waiting, active, stale, disconnected, and error states. Connection attempts time out after 6 seconds and can be canceled. Unexpected closure retries every two seconds; manual disconnect, source switching or pause cancels retries.
+- Only valid accepted frames refresh the heartbeat (500 ms for legacy/local dummy streams; `ESP32_DATA_TIMEOUT_MS`, default 1000 ms, for the USB bridge). Invalid traffic cannot keep the synchronization indicator green.
 - The received rate counts accepted frames in the last second. The last-frame age is measured locally. Rejected packets are shown separately; socket statistics do not invent ESP-NOW packet loss or hardware latency.
 - On a stale or disconnected stream, the rendered model freezes at its last displayed pose. There is no automatic switch to dummy data.
 - Received joint telemetry remains exact within limits. The 3D rendering interpolates toward it for smooth motion, with no autonomous control decisions. The wireframe comparison view can show the difference between received state and its interpolated display.
